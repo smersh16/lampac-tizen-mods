@@ -1,0 +1,14 @@
+# Секреты и данные Lampac — никогда не выкладывать
+init.conf
+passwd
+cache/
+logs/
+data/
+*.log
+
+# Служебное
+bin/
+obj/
+.vs/
+.idea/
+.DS_Store
