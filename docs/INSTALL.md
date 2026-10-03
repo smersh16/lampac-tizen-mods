@@ -14,7 +14,7 @@
 ## Что понадобится
 
 - Доступ к серверу, где работает Lampac (по SSH или напрямую), и права запускать `docker`.
-- Два файла из чата: `Phantom-ts-remux.zip` и `MirageTs-ts-remux.zip`.
+- Папки модулей из этого репозитория: `mods/PhantomTs` и `mods/MirageTs` (скачайте репозиторий: **Code → Download ZIP**, или клонируйте через git).
 - Рабочий Lampac, в котором модули Phantom и/или Mirage уже включены. Нужен только тот модуль, который вам нужен: можно ставить один из двух.
 
 ffmpeg отдельно ставить не нужно, он уже есть внутри образа Lampac.
@@ -33,23 +33,14 @@ docker inspect lampac --format '{{ index .Config.Labels "com.docker.compose.proj
 
 ## Шаг 2. Положите модули в папку mods
 
-1. Создайте папку для сторонних модулей:
+1. Создайте на сервере папку для сторонних модулей:
    ```
    mkdir -p ./lampac-docker/mods
    ```
-2. Скопируйте на сервер оба архива (например, через WinSCP, `scp` или файловый менеджер) и распакуйте:
+2. Скачайте репозиторий (**Code → Download ZIP**), распакуйте и скопируйте на сервер **содержимое папки `mods`** из репозитория, то есть две папки `PhantomTs` и `MirageTs`, в `./lampac-docker/mods/` (например, через WinSCP, `scp` или файловый менеджер).
+3. Проверьте результат:
    ```
-   cd ./lampac-docker/mods
-   unzip Phantom-ts-remux.zip
-   unzip MirageTs-ts-remux.zip
-   ```
-3. **Переименуйте папку Phantom в PhantomTs.** Это обязательный шаг: в архиве папка называется `Phantom`, а это имя мы дальше выключаем у встроенного модуля.
-   ```
-   mv Phantom PhantomTs
-   ```
-4. Проверьте результат:
-   ```
-   ls
+   ls ./lampac-docker/mods
    ```
    Должно быть две папки: `PhantomTs` и `MirageTs`. В каждой лежат файлы `Controller.cs`, `ModInit.cs`, `Remux.cs`, `manifest.json` и другие.
 
