@@ -22,6 +22,23 @@
 
 ## Быстрый старт
 
+**Способ А. Автоматически через `repository.yaml` (рекомендуется).** Lampac сам скачает модули из GitHub при запуске и обновит при следующих запусках:
+
+1. Создайте файл `mods/repository.yaml` с таким содержимым (готовый пример лежит в корне репозитория):
+
+   ```yaml
+   - repository: https://github.com/smersh16/lampac-tizen-mods
+     branch: main
+     modules:
+       - mods/PhantomTs
+       - mods/MirageTs
+   ```
+
+2. Добавьте `"Phantom"` / `"Mirage"` в `SkipModules` в `init.conf`.
+3. Перезапустите контейнер. Модули появятся в `module/lampac-tizen-mods/`.
+
+**Способ Б. Вручную.**
+
 1. Скопируйте `mods/PhantomTs` и/или `mods/MirageTs` на сервер в `./lampac-docker/mods/`.
 2. Подключите папки в `docker-compose.yaml` и добавьте `"Phantom"` / `"Mirage"` в `SkipModules` в `init.conf`.
 3. Пересоздайте контейнер: `docker compose up -d --force-recreate`.
