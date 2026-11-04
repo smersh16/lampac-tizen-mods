@@ -31,7 +31,7 @@ docker inspect lampac --format '{{ index .Config.Labels "com.docker.compose.proj
 
 В примерах ниже данные Lampac лежат в `./lampac-docker/` (там `init.conf` и `passwd`). Если у вас другое расположение, используйте свои пути.
 
-## Шаг 2. Положите модули в папку mods
+## Шаг 2 (способ А). Положите модули в папку mods
 
 1. Создайте на сервере папку для сторонних модулей:
    ```
@@ -46,7 +46,7 @@ docker inspect lampac --format '{{ index .Config.Labels "com.docker.compose.proj
 
 Если вам нужен только один модуль, положите только его.
 
-## Шаг 3. Подключите папки к контейнеру (docker-compose.yaml)
+## Шаг 3 (способ А). Подключите папки к контейнеру (docker-compose.yaml)
 
 Откройте `docker-compose.yaml` любым редактором (`nano docker-compose.yaml`). В разделе `volumes` сервиса lampac добавьте строки со своими модулями. Остальные строки не трогайте.
 
@@ -63,6 +63,36 @@ docker inspect lampac --format '{{ index .Config.Labels "com.docker.compose.proj
 Важно:
 - Пробелы в начале строк должны совпадать с соседними строками (в YAML отступы значимы). Табуляцию не используйте.
 - Пути слева от двоеточия должны совпадать с тем, куда вы положили папки на шаге 2. Справа оставьте как в примере.
+
+## Способ Б. Автоматическая установка через repository.yaml
+
+Это замена шагов 2 и 3: ничего копировать вручную не нужно, Lampac сам скачает модули из GitHub при запуске. Шаги 4–7 выполняются так же.
+
+1. Создайте файл `./lampac-docker/config/repository.yaml`:
+
+```yaml
+- repository: https://github.com/smersh16/lampac-tizen-mods
+  branch: main
+  modules:
+    - mods/PhantomTs
+    - mods/MirageTs
+```
+
+Если нужен только один модуль, оставьте одну строку в `modules`.
+
+2. В `docker-compose.yaml` в `volumes` добавьте ОДНУ строку (вместо строк с папками модулей):
+
+```yaml
+      - ./lampac-docker/config/repository.yaml:/lampac/mods/repository.yaml
+```
+
+Если папка `/lampac/mods` у вас уже подключена целиком, просто положите туда `repository.yaml`.
+
+3. Выполните шаги 4–7 (SkipModules, перезапуск, проверка).
+
+Как это работает: при каждом запуске Lampac проверяет репозиторий и, если появился новый коммит, скачивает модули в `module/lampac-tizen-mods/`. Эта папка внутри контейнера, поэтому после пересоздания контейнера модули скачиваются заново (нужен доступ к github.com). В логах будет строка `loaded module: PhantomTs`.
+
+Важно: не используйте одновременно способ А (папки в `mods/`) и этот: модуль загрузится из `mods/`, а скачанная копия будет проигнорирована.
 
 ## Шаг 4. Выключите встроенные Phantom и Mirage (init.conf)
 

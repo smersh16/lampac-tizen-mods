@@ -1,0 +1,7 @@
+# Пример repository.yaml для Lampac: автоматически скачивает PhantomTs и MirageTs из GitHub.
+# Положите этот файл в mods/repository.yaml (см. docs/INSTALL.md, способ Б).
+- repository: https://github.com/smersh16/lampac-tizen-mods
+  branch: main
+  modules:
+    - mods/PhantomTs
+    - mods/MirageTs
