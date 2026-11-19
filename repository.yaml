@@ -5,3 +5,4 @@
   modules:
     - mods/PhantomTs
     - mods/MirageTs
+    - mods/AladinFix
