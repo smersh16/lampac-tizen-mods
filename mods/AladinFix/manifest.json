@@ -8,6 +8,7 @@
     "Controller.cs",
     "Model.cs",
     "ModInit.cs",
-    "ModuleConf.cs"
+    "ModuleConf.cs",
+    "Remux.cs"
   ]
 }

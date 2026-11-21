@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Shared.Attributes;
 using Shared;
 using Shared.Models.Base;
@@ -7,7 +8,10 @@ using Shared.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Net.Http;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Shared.Services.Pools;
@@ -292,6 +296,8 @@ public class AladinController : BaseOnlineController<ModuleConf>
         if (!string.IsNullOrEmpty(edgeHash))
             streamHeaders.Add(new HeadersModel("Accepts-Controls", edgeHash));
 
+        bool useTs = UseTs() && await TsRemux.IsAvailable(init.ffmpeg);
+
         foreach (var hlsSource in data.file?.hlsSource ?? new List<HlsSource>())
         {
             // first or default
@@ -299,9 +305,29 @@ public class AladinController : BaseOnlineController<ModuleConf>
             {
                 streams = new List<StreamQualityDto>(6);
 
-                foreach (var q in hlsSource.quality ?? new Dictionary<string, string>())
+                var qualities = (hlsSource.quality ?? new Dictionary<string, string>()).AsEnumerable();
+
+                if (useTs)
+                {
+                    // ТВ обычно не декодируют >1080p (AV1) — режем по remux_maxq и ставим лучшее первым
+                    qualities = qualities
+                        .Where(q => init.remux_maxq <= 0 || QualityHeight(q.Key) == 0 || QualityHeight(q.Key) <= init.remux_maxq)
+                        .OrderByDescending(q => QualityHeight(q.Key));
+                }
+
+                foreach (var q in qualities)
                 {
                     string file = q.Value;
+
+                    if (useTs)
+                    {
+                        // ремакс берёт только основную ссылку, без резервной (" or ")
+                        string main = file.Split(" or ")[0].Trim();
+                        string tsid = TsRemux.Register(main, streamHeaders);
+                        streams.Add(new StreamQualityDto(accsArgs($"{host}/lite/aladin/ts.m3u8?id={tsid}"), $"{q.Key}p"));
+                        continue;
+                    }
+
                     if (init.reserve && hlsSource.reserve != null && hlsSource.reserve.TryGetValue(q.Key, out string reserve))
                         file += " or " + reserve;
 
@@ -360,6 +386,76 @@ public class AladinController : BaseOnlineController<ModuleConf>
             segments: segments,
             httpContext: HttpContext
         ));
+    }
+    #endregion
+
+    #region TS remux
+    static int QualityHeight(string quality)
+    {
+        return int.TryParse(Regex.Match(quality ?? "", @"\d+").Value, out int h) ? h : 0;
+    }
+
+    bool UseTs()
+    {
+        if (!init.remux_ts)
+            return false;
+
+        if (string.IsNullOrEmpty(init.remux_ua))
+            return true;
+
+        string ua = Request.Headers["User-Agent"].ToString();
+        return Regex.IsMatch(ua, init.remux_ua, RegexOptions.IgnoreCase);
+    }
+
+    [HttpGet]
+    [Route("lite/aladin/ts.m3u8")]
+    async public Task<ActionResult> TsPlaylist(string id)
+    {
+        if (await IsRequestBlocked(rch: false))
+            return badInitMsg;
+
+        if (!TsRemux.TryGetStream(id, out string url, out var headers))
+            return NotFound();
+
+        var session = await TsRemux.Create(url, headers, init.useproxystream ? proxy : null);
+        if (session == null)
+        {
+            // ремакс невозможен/не нужен (поток уже TS, шифрование, ошибка загрузки) — отдаём как раньше
+            return Redirect(HostStreamProxy(url, headers: headers, force_streamproxy: true, forceMd5: true));
+        }
+
+        var sb = new StringBuilder();
+        sb.Append("#EXTM3U\n#EXT-X-VERSION:3\n");
+        sb.Append("#EXT-X-TARGETDURATION:").Append((int)Math.Ceiling(session.durations.Max())).Append('\n');
+        sb.Append("#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n");
+
+        for (int i = 0; i < session.segments.Length; i++)
+        {
+            sb.Append("#EXTINF:").Append(session.durations[i].ToString("0.000", CultureInfo.InvariantCulture)).Append(",\n");
+            sb.Append(host).Append("/lite/aladin/tsseg/").Append(session.id).Append('/').Append(i).Append(".ts\n");
+        }
+
+        sb.Append("#EXT-X-ENDLIST\n");
+
+        return Content(sb.ToString(), "application/vnd.apple.mpegurl");
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("lite/aladin/tsseg/{sid}/{index:int}.ts")]
+    async public Task<ActionResult> TsSegment(string sid, int index)
+    {
+        if (await IsRequestBlocked(rch: false))
+            return badInitMsg;
+
+        if (!TsRemux.TryGet(sid, out var session) || index < 0 || index >= session.segments.Length)
+            return NotFound();
+
+        byte[] data = await TsRemux.GetSegment(session, index, init.ffmpeg, HttpContext.RequestAborted);
+        if (data == null)
+            return StatusCode(502);
+
+        return File(data, "video/MP2T", enableRangeProcessing: true);
     }
     #endregion
 
