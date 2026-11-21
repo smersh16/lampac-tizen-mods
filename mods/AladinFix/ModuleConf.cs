@@ -28,6 +28,18 @@ public class ModuleConf : BaseSettings, ICloneable
 
     public bool reserve { get; set; }
 
+    /// <summary>Пересобирать fMP4-HLS в MPEG-TS (для ТВ, не тянущих fMP4)</summary>
+    public bool remux_ts { get; set; } = true;
+
+    /// <summary>Regex по User-Agent клиентов, которым отдаётся TS. Пусто — всем.</summary>
+    public string remux_ua { get; set; } = "Tizen|SMART-TV|SmartTV";
+
+    /// <summary>Максимальная высота (p) для клиентов с TS-ремаксом. 0 — без ограничения.</summary>
+    public int remux_maxq { get; set; } = 1080;
+
+    /// <summary>Путь к ffmpeg. Пусто — data/ffmpeg(.exe) или ffmpeg из PATH.</summary>
+    public string ffmpeg { get; set; }
+
 
     public ModuleConf Clone()
     {

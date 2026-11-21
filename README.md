@@ -18,6 +18,7 @@
 |---|---|
 | `mods/PhantomTs` | Phantom: пересборка в TS, сохранение `Range` при запросах к CDN, лимит качества для ТВ |
 | `mods/MirageTs` | Mirage: пересборка в TS поверх кеша Playwright, исправленные `Content-Type` и `Range`, лимит качества для ТВ |
+| `mods/AladinFix` | Aladin: короткие md5-ссылки `/proxy` (ошибка 414) и пересборка в TS для ТВ (те же настройки `remux_*`, раздел `"Aladin"`) |
 | `docs/INSTALL.md` | Подробная инструкция по установке (Docker) |
 
 ## Быстрый старт
@@ -32,6 +33,7 @@
      modules:
        - mods/PhantomTs
        - mods/MirageTs
+       - mods/AladinFix
    ```
 
 2. Добавьте `"Phantom"` / `"Mirage"` в `SkipModules` в `init.conf`.

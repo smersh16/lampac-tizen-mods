@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
+using Shared.Models.AppConf;
 using Shared.Models.Base;
 using Shared.Models.Events;
 using Shared.Models.Module;
@@ -35,6 +36,11 @@ public class ModInit : IModuleLoaded, IModuleOnline, IModuleOnlineSpider
         CoreInit.conf.online.with_search.Add("aladin");
 
         updateConf();
+
+        const string tsPattern = "^/lite/aladin/tsseg/";
+        if (!CoreInit.conf.WAF.limit_map.Exists(i => i.pattern == tsPattern))
+            CoreInit.conf.WAF.limit_map.Insert(0, new WafLimitRootMap(tsPattern, new WafLimitMap { limit = 1000, second = 1 }));
+
         EventListener.UpdateInitFile += updateConf;
         EventListener.OnlineApiQuality += onlineApiQuality;
     }
