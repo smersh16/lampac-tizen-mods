@@ -19,6 +19,7 @@
 | `mods/PhantomTs` | Phantom: пересборка в TS, сохранение `Range` при запросах к CDN, лимит качества для ТВ |
 | `mods/MirageTs` | Mirage: пересборка в TS поверх кеша Playwright, исправленные `Content-Type` и `Range`, лимит качества для ТВ |
 | `mods/AladinFix` | Aladin: короткие md5-ссылки `/proxy` (ошибка 414) и пересборка в TS для ТВ (те же настройки `remux_*`, раздел `"Aladin"`) |
+| `mods/AniLibertyFix` | AniLiberty: номер сезона по франшизе (верные названия и иконки серий) и без созвучных чужих аниме в выдаче (раздел `"AniLiberty"`, см. [README модуля](mods/AniLibertyFix/README.md)) |
 | `docs/INSTALL.md` | Подробная инструкция по установке (Docker) |
 
 ## Быстрый старт
@@ -34,9 +35,10 @@
        - mods/PhantomTs
        - mods/MirageTs
        - mods/AladinFix
+       - mods/AniLibertyFix
    ```
 
-2. Добавьте `"Phantom"` / `"Mirage"` в `SkipModules` в `init.conf`.
+2. Добавьте `"Phantom"` / `"Mirage"` (и `"Aladin"` / `"AniLiberty"`, если ставите `AladinFix` / `AniLibertyFix`) в `SkipModules` в `init.conf`.
 3. Перезапустите контейнер. Модули появятся в `module/lampac-tizen-mods/`.
 
 **Способ Б. Вручную.**
